@@ -517,6 +517,7 @@ class ProgramDmaBench: public Program
               auto superpage = mChannel->getSuperpage();
               // We do partial updates of the mPushCount because we can have very large superpages, which would otherwise
               // cause hiccups in the display
+             
               int pages = superpage.getReceived() / mPageSize;
               int pagesToCount = pages - currentPagesCounted;
               mPushCount.fetch_add(pagesToCount, std::memory_order_relaxed);
@@ -565,17 +566,23 @@ class ProgramDmaBench: public Program
 
           size_t offset;
           if (readoutQueue.read(offset) && !mBufferFullCheck) {
+
             // Read out pages
-            int pages = mSuperpageSize / mPageSize;
-            for (int i = 0; i < pages; ++i) {
-              auto pageAddress = mBufferBaseAddress + offset + i * mPageSize;
+            size_t readoutBytes = 0;
+            auto superpageAddress = mBufferBaseAddress + offset;
+            while((readoutBytes <= mSuperpageSize - mPageSize) && !isStopDma()) { //At least one more dma page still fits in the superpage
+              auto pageAddress = superpageAddress + readoutBytes;
               auto readoutCount = fetchAddReadoutCount();
-              readoutPage(pageAddress, mPageSize, readoutCount);
+              size_t pageSize = readoutPage(pageAddress, readoutCount);
 
               if(mOptions.byteCountEnabled && !(mOptions.loopbackModeString == "INTERNAL")) {
-                const auto bytes = Cru::DataFormat::getEventSize(reinterpret_cast<const char*>(pageAddress));
-                mByteCount.fetch_add(bytes, std::memory_order_relaxed);
+                mByteCount.fetch_add(pageSize, std::memory_order_relaxed);
               }
+              readoutBytes += pageSize;
+            }
+
+            if (readoutBytes > mSuperpageSize) {
+              BOOST_THROW_EXCEPTION(Exception() << ErrorInfo::Message("RDH reports cumulative dma page sizes that exceed the superpage size"));
             }
 
             // Page has been read out
@@ -611,10 +618,17 @@ class ProgramDmaBench: public Program
         for (int i = 0; i < size; ++i) {
           auto superpage = mChannel->popSuperpage();
           if (mOptions.loopbackModeString == "NONE" || mOptions.loopbackModeString == "DDG") { // TODO: CRORC?
-            int pages = mSuperpageSize / mPageSize;
-            for (int i = 0; i < pages; ++i) {
+            auto superpageAddress = mBufferBaseAddress + superpage.getOffset();
+            size_t readoutBytes = 0;
+            while(readoutBytes <= (mSuperpageSize - mPageSize) && !isSigInt()) {//At least one more dma page still fits in the superpage
+              auto pageAddress = superpageAddress + readoutBytes;
               auto readoutCount = fetchAddReadoutCount();
-              readoutPage(mBufferBaseAddress + superpage.getOffset() + i * mPageSize, mPageSize, readoutCount);
+              size_t pageSize = readoutPage(pageAddress, readoutCount);
+              readoutBytes += pageSize;
+            }
+
+            if (readoutBytes > mSuperpageSize) {
+              BOOST_THROW_EXCEPTION(Exception() << ErrorInfo::Message("RDH reports cummulative dma page sizes that exceed the superpage size"));
             }
           }
           std::cout << "[popped superpage " << i << " ], size= " << superpage.getSize() << " received= " << superpage.getReceived() << " isFilled=" << superpage.isFilled() << " isReady=" << 
@@ -647,8 +661,13 @@ class ProgramDmaBench: public Program
       }
     };
 
-    void readoutPage(uintptr_t pageAddress, size_t pageSize, int64_t readoutCount)
+    size_t readoutPage(uintptr_t pageAddress, int64_t readoutCount)
     {
+      size_t pageSize = Cru::DataFormat::getEventSize(reinterpret_cast<const char*>(pageAddress));
+      if (mOptions.loopbackModeString == "INTERNAL") {
+        pageSize = mPageSize; //Fake the page size for internal
+      }
+
       // Read out to file
       printToFile(pageAddress, pageSize, readoutCount);
 
@@ -700,6 +719,9 @@ class ProgramDmaBench: public Program
         // Set the buffer to the default value after the readout
         resetPage(pageAddress, pageSize);
       }
+
+      //return pageSize == 0x40 ? mPageSize : pageSize; //Make sure than an RDH only page correctly jumps 8KiB for now...
+      return pageSize; //Make sure than an RDH only page correctly jumps 8KiB for now...
     }
 
     bool checkErrorsCru(uintptr_t pageAddress, size_t pageSize, int64_t eventNumber, int linkId, std::string loopbackMode)
@@ -777,7 +799,8 @@ class ProgramDmaBench: public Program
       // Get memsize from the header
       const auto memBytes = Cru::DataFormat::getEventSize(reinterpret_cast<const char*>(pageAddress)); // Memory size [RDH, Payload]
 
-      if (memBytes < 40 || memBytes > pageSize) {
+      //if (memBytes < 0x40 || memBytes > pageSize) {
+      if (memBytes < 0x40) {
         // Report RDH error
         mErrorCount++;
         if (mErrorCount < MAX_RECORDED_ERRORS) {
