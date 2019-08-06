@@ -198,7 +198,7 @@ class ProgramDmaBench: public Program
               "Randomly pause readout")
           ("readout-mode",
               po::value<std::string>(&mOptions.readoutModeString),
-              "Set readout mode [CONTINUOUS]")
+          "Set readout mode [CONTINUOUS]")
           ("stbrd",
               po::bool_switch(&mOptions.stbrd),
               "Set the STBRD trigger command for the CRORC")
@@ -232,6 +232,7 @@ class ProgramDmaBench: public Program
       }
 
 
+      getLogger() << "nogap patch" << endm;
       getLogger() << "DMA channel: " << mOptions.dmaChannel << endm;
 
       auto cardId = Options::getOptionCardId(map);
