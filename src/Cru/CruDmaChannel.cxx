@@ -159,53 +159,61 @@ void CruDmaChannel::setBufferNonReady()
 
 void CruDmaChannel::deviceStopDma()
 {
-  // Block further pushes; transfer queue has no available place anymore
+  // Transfere queue has no available place anymore
   mLinkQueuesTotalAvailable = 0;
 
-  // Disable data taking
   setBufferNonReady();
   getBar2()->disableDataTaking();
-
-  // Transfer remaining (filled) superpages to ReadyQueue
   int moved = 0;
   for (auto& link : mLinks) {
     int32_t superpageCount = getBar()->getSuperpageCount(link.id);
     uint32_t amountAvailable = superpageCount - link.superpageCounter;
     //log((format("superpageCount %1% amountAvailable %2%") % superpageCount % amountAvailable).str());
-    while (amountAvailable) {
+    for (uint32_t i = 0; i < amountAvailable; ++i) {
       if (mReadyQueue.size() >= READY_QUEUE_CAPACITY) {
         break;
       }
 
-      if (!link.queue.empty()) {
+      if (!link.queue.empty()) { // care for the extra filled superpage
         transferSuperpageFromLinkToReady(link, true);
         moved++;
       }
-      amountAvailable--;
     }
+
+    // Return any superpages that have been pushed up in the meantime but won't get filled
+    /*while(!link.queue.empty()) {
+      link.queue.front().setReceived(0);
+      link.queue.front().setReady(true);
+      mReadyQueue.push_back(link.queue.front());
+      link.queue.pop_front();
+    }*/
+    /*assert(link.queue.empty());
+    if (!link.queue.empty()) {
+      log("OH MY FUCKING GOD THIS IS COMPLETELY STUPID");
+    }
+    assert(false);*/
   }
 
   
   // Return any superpages that have been pushed up in the meantime but won't get filled
   for (auto& link : mLinks) {
     while(!link.queue.empty()) {
-      link.queue.front().setReceived(0); //sylvain would have to weigh in
+      link.queue.front().setReceived(0); //sylvain would have to
       link.queue.front().setReady(true);
       mReadyQueue.push_back(link.queue.front());
       link.queue.pop_front();
     }
 
     if (!link.queue.empty()) {
-      log((format("Superpage queue of link %1% not empty after DMA stop. Superpages unclaimed.") % link.id).str(),
-          InfoLogger::InfoLogger::Error);
+      log("OH MY FUCKING GOD THIS IS COMPLETELY STUPID");
     }
   }
 
-  if (getTransferQueueAvailable()) {
-    log((format("Transfer Q: %1%") % getTransferQueueAvailable()).str());
-    BOOST_THROW_EXCEPTION(Exception() << ErrorInfo::Message("Transfer queue not full when it should be"));
+  if (mLinkQueuesTotalAvailable) {
+      log("OH MY FUCKING GOD THIS IS COMPLETELY IDIOTIC");
   }
 
+  //assert(mLinkQueuesTotalAvailable == LINK_QUEUE_CAPACITY * mLinks.size());
   log((format("Moved %1% remaining superpage(s) to ready queue") % moved).str());
 }
 
@@ -271,6 +279,7 @@ void CruDmaChannel::pushSuperpage(Superpage superpage)
   auto dmaPages = superpage.getSize() / mDmaPageSize;
   auto busAddress = getBusOffsetAddress(superpage.getOffset());
   getBar()->pushSuperpageDescriptor(link.id, dmaPages, busAddress);
+  //std::cout << "Pushed a superpage to " << link.id << std::endl;
 }
 
 auto CruDmaChannel::getSuperpage() -> Superpage
@@ -319,6 +328,19 @@ void CruDmaChannel::transferSuperpageFromLinkToReady(Link& link, bool stopping)
     mLinkQueuesTotalAvailable++;
   }
 }
+
+/*std::vector<Superpage> CruDmaChannel::forcePopAllSuperpages()
+{
+  for (auto& link : mLinks) {
+
+    while (!link.queue.empty()) {
+      
+      link.queue.pop_front();
+    }
+
+  }
+ 
+}*/
 
 void CruDmaChannel::fillSuperpages()
 {
