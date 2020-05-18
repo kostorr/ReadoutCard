@@ -403,7 +403,194 @@ Run a Python script that can use a simple interface to use the library.
 Setup hugetlbfs directories & mounts. If using hugepages, should be run once per boot.
 
 ### roc-status
-Reports status of the card's configuration.
+Reports global and per-link status of the card's configuration. Output may be to stdout (no option), to JSON (`--json-out`), to CSV (`--csv-out`) or directly to monitoring (`--monitoring`).
+
+#### stdout
+```
+ $> roc-status --id=#1
+----------------------------
+Local clock | Fixed offset
+User Logic Enabled
+----------------------------
+=============================================================================================================================================
+  Link ID   GBT Mode Tx/Rx   Loopback   GBT MUX        Datapath Mode   Datapath   RX freq(MHz)   TX freq(MHz)   Status   Optical power(uW)
+---------------------------------------------------------------------------------------------------------------------------------------------
+  0         GBT/GBT          None       SWT            Continuous      Disabled   240.47         240.47         UP       486.4
+  1         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       563.8
+  2         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       637.7
+  3         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       589.3
+  4         GBT/GBT          Enabled    TTC:CTP        Packet          Enabled    240.47         240.47         UP       689.6
+  5         GBT/GBT          Enabled    TTC:CTP        Packet          Enabled    240.47         240.47         UP       750.9
+  6         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       665.1
+  7         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       530.3
+  8         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       810.4
+  9         GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       557.2
+  10        GBT/GBT          Enabled    TTC:CTP        Packet          Enabled    240.47         240.47         UP       732.8
+  11        GBT/GBT          None       TTC:CTP        Continuous      Disabled   240.47         240.47         UP       260.7
+=============================================================================================================================================
+
+```
+
+#### JSON
+```
+ $> roc-status --id=#1 --json
+{
+    "clock": "Local",
+    "offset": "Fixed",
+    "userLogic": "Enabled",
+    "0": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "SWT",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "486.40"
+    },
+    "1": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "563.80"
+    },
+    "2": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "637.70"
+    },
+    "3": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "589.30"
+    },
+    "4": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "Enabled",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Packet",
+        "datapath": "Enabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "689.60"
+    },
+    "5": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "Enabled",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Packet",
+        "datapath": "Enabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "754.60"
+    },
+    "6": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "665.10"
+    },
+    "7": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "534.10"
+    },
+    "8": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "817.30"
+    },
+    "9": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "550.00"
+    },
+    "10": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "Enabled",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Packet",
+        "datapath": "Enabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "732.80"
+    },
+    "11": {
+        "gbtMode": "GBT\/GBT",
+        "loopback": "None",
+        "gbtMux": "TTC:CTP",
+        "datapathMode": "Continuous",
+        "datapath": "Disabled",
+        "rxFreq": "240.47",
+        "txFreq": "240.47",
+        "status": "UP",
+        "opticalPower": "260.70"
+    }
+}
+```
+
+#### CSV
+```
+ $> roc-status --id=#1 --csv
+Link ID,GBT Mode,Loopback,GBT Mux,Datapath Mode,Datapath,RX Freq(MHz),TX Freq(MHz),Status,Optical Power(uW),Clock,Offset,UserLogic
+,,,,,,,,,,Local,Fixed,Enabled
+0,GBT/GBT,None,SWT,Continuous,Disabled,240.471054,240.471039,UP,490.899994
+1,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471054,UP,563.799988
+2,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471039,UP,637.700012
+3,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471039,UP,589.299988
+4,GBT/GBT,Enabled,TTC:CTP,Packet,Enabled,240.471039,240.471039,UP,689.599976
+5,GBT/GBT,Enabled,TTC:CTP,Packet,Enabled,240.471039,240.471054,UP,758.200012
+6,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471039,UP,668.599976
+7,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471054,UP,522.799988
+8,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471039,UP,817.299988
+9,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471054,UP,557.200012
+10,GBT/GBT,Enabled,TTC:CTP,Packet,Enabled,240.471054,240.471039,UP,732.799988
+11,GBT/GBT,None,TTC:CTP,Continuous,Disabled,240.471054,240.471054,UP,260.700012
+```
 
 #### Monitoring status
 
@@ -463,7 +650,7 @@ metric format for the CRORC and the CRU is different, as different parameters ar
 | ---------------- | ------------------------------------------------------- | ------ | 
 | `"pciAddress"`   | -                                                       | string |
 | `"gbtMode"`      | "GBT/GBT" or "GBT/WB"                                   | string |
-| `"loopback"`     | 0/1 (Enabled/Disabled)                                  | int    |
+| `"loopback"`     | 0/1 (Disabled/Enabled)                                  | int    |
 | `"gbtMux"`       | "DDG", "SWT", "TTC:CTP", "TTC:PATTERN", or "TTC:MIDTRG" | string |
 | `"datapathMode"` | "PACKET" or "CONTINUOUS"                                | string |
 | `"datapath"`     | 0/1 (Disabled/Enabled)                                  | int    |
