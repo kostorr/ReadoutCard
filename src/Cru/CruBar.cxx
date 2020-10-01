@@ -582,7 +582,7 @@ void CruBar::configure(bool force)
       static_cast<uint32_t>(mDownstreamData) == reportInfo.downstreamData &&
       std::equal(mLinkMap.begin(), mLinkMap.end(), reportInfo.linkMap.begin()) &&
       checkPonUpstreamStatusExpected(reportInfo.ponStatusRegister, reportInfo.onuAddress) &&
-      checkClockConsistent(reportInfo.linkMap) &&
+//      checkClockConsistent(reportInfo.linkMap) &&
       mCruId == reportInfo.cruId &&
       mDynamicOffset == reportInfo.dynamicOffset &&
       mTriggerWindowSize == reportInfo.triggerWindowSize &&
@@ -601,7 +601,7 @@ void CruBar::configure(bool force)
   DatapathWrapper datapathWrapper = DatapathWrapper(mPdaBar);
 
   /* TTC */
-  if (static_cast<uint32_t>(mClock) != reportInfo.ttcClock || !checkClockConsistent(reportInfo.linkMap) || force) {
+  if (static_cast<uint32_t>(mClock) != reportInfo.ttcClock /*|| !checkClockConsistent(reportInfo.linkMap) */|| force) {
     log("Setting the clock");
     ttc.setClock(mClock);
 
@@ -617,7 +617,7 @@ void CruBar::configure(bool force)
       }
     }
 
-    if (mGbtEnabled || !checkClockConsistent(reportInfo.linkMap)) {
+    if (mGbtEnabled /*|| !checkClockConsistent(reportInfo.linkMap)*/) {
       log("Calibrating the fPLLs");
       Gbt gbt = Gbt(mPdaBar, mLinkMap, mWrapperCount, mEndpoint);
       gbt.calibrateGbt(mLinkMap);
